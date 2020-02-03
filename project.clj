@@ -2,7 +2,8 @@
   :description "A simple multiplayer text game"
   :url "https://www.github.com/slugbyte/rooms"
   :license {:name "MIT"
-            :url "TODO"}
+            :url "https://github.com/slugbyte/rooms/blob/master/LICENSE.md"}
   :dependencies [[org.clojure/clojure "1.10.0"]]
-  :main ^:skip-aot rooms.core
-  )
+  :profiles {:server {:main server.core}
+             :client {:main client.core}
+             :uberjar {:aot :all}})
