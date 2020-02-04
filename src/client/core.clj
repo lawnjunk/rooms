@@ -1,4 +1,5 @@
 (ns client.core 
+  (:require [common.machine :as machine])
   (:gen-class))
 
 (defn -main
