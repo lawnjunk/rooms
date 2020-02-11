@@ -3,7 +3,7 @@
             [clojure.edn :as edn]
             )
   (:import (java.net Socket)
-           (java.io BufferedReader BufferedWriter)))
+           (java.io BufferedReader BufferedWriter PushbackReader)))
 
 (defprotocol InputOutput
   (>text [this text])
@@ -27,7 +27,5 @@
 
 (defn -read-data
   [reader]
-  (-> reader
-      -read-line
-      edn/read-string))
+  (edn/read (PushbackReader. reader)))
 

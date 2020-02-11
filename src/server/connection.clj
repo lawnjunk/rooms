@@ -10,9 +10,9 @@
 (s/def ::socket util/socket?)
 (s/def ::reader util/reader?)
 (s/def ::writer util/writer?)
-(s/def ::closed (util/reference? util/atom? boolean?))
-(s/def ::connection 
-  (s/keys :req-un [::uuid ::type ::socket ::reader ::writer ::closed ]))
+(s/def ::closed (util/reference? util/atom? boolean?
+s/def ::connection 
+  s/keys :req-un [::uuid ::type ::socket ::reader ::writer ::closed ]))
 (def assert-connection #(s/assert ::connection %))
 
 (defn- close-reader [reader] (.close reader))
@@ -21,15 +21,17 @@
 
 (defprotocol ConnectionProtocol
   (close-connection! [this])
-  (closed? [this]))
+  (closed? [this])
+  (open? [this]))
 
 (defn -close-connection! 
   "close a connetion"
   [connection]
-  (close-reader (:reader connection))
-  (close-writer (:writer connection))
-  (close-socket (:socket connection))
-  (reset! (:closed connection) true)
+  (when (.open? connection)
+    (close-socket (:socket connection))
+    (close-reader (:reader connection))
+    (close-writer (:writer connection))
+    (reset! (:closed connection) true))
   connection)
 
 (defn -closed? 
@@ -37,15 +39,19 @@
   [connection]
   (or @(:closed connection) (.isClosed (:socket connection))))
 
+(def -open? (complement -closed?))
+
 (defrecord Connection [uuid type socket reader writer closed]
   io/InputOutput
     (>text [this text] (io/-write (:writer this) text))
     (>data [this text] (io/-write-data (:writer this) text))
     (<text [this] (io/-read-line (:reader this)))
-    (<data [this] (io/-read-data (:writer this)))
+    (<data [this] (io/-read-data (:reader this)))
   ConnectionProtocol
     (close-connection! [this] (-close-connection! this))
-    (closed? [this] (-closed? this)))
+    (closed? [this] (-closed? this))
+    (open? [this] (-open? this))
+    )
 
 (defn make 
   "creates a connection from a socket"
@@ -58,5 +64,4 @@
                       :reader (jio/reader socket)
                       :writer (jio/writer socket)
                       :closed (atom false)})))
-
 
